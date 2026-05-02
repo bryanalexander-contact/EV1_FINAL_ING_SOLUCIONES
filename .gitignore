@@ -1,0 +1,19 @@
+# Entorno virtual
+.venv/
+node_modules/
+
+# Bloquear todos los archivos de texto (Informes)
+*.txt
+output/*.txt
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Historial de Jupyter
+.ipynb_checkpoints/
