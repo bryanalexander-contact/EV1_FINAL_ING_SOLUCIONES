@@ -7,16 +7,25 @@ PASO 1(CMD DE WINDOWS, O TERMINAL POWERSHELL DE VISUAL STUDIO CODE O CUALQUIER I
 correr:
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
+
+
+
 <img width="793" height="206" alt="image" src="https://github.com/user-attachments/assets/261953eb-0bf3-4342-aa8e-b77e35501fff" />
 
-PASO 2, SI DICE QUE EL PASO UV INIT NO ES NECESARIO, PEGAR DE INMEDIATO EL CODIGO DE [project]...,"python-dotenv>=1.2.2", 
-SI ES QUE CREA UN NUEVO PROJECT.TOML, igualmente pegar el codigo de project a continuacion.
 
+
+
+
+
+
+
+PASO 2,CORRER EL COMANDO UV INIT, Y REMPLAZAR EL PYPROJECT.TOML CON EL DE LA ABAJO
+1- correr:
 uv init 
 
 y luego 
 
-PEGAR ESTO:
+2-remplazar pyproject.toml por:
 
 [project]
 name = "proyecto-final"
@@ -36,10 +45,12 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
-y luego correr esto:
+3-luego correr esto:
 
 uv lock
 uv sync 
+
+
 
 
 PASO 3:
@@ -69,7 +80,12 @@ PASO 5:
 
 YA UNA VEZ EL JUPYTER ESTE CORRIENDO, IR A AGENTE.IPYBN, Y SELECCIONAR KERNEL
 
+
 <img width="246" height="279" alt="image" src="https://github.com/user-attachments/assets/fc470833-3224-44d4-b1fd-89775468daa4" />
+
+
+
+
 
 <img width="903" height="115" alt="image" src="https://github.com/user-attachments/assets/cceecda5-0e02-478a-aadd-f821036c63a9" />
 
@@ -85,9 +101,20 @@ uv run python -m ipykernel install --user --name=mi_proyecto_uv --display-name "
 
 si eso no funciono, probar por ultimo con, corriendo:  uv sync   , en la terminal, cierre su IDE(Visual studio code ej) y abralo, ve a agente.ipybn , y ve una flecha circular que dice restart, ahi se reiniciara todo, pudiendo elegir el kernel de python ./venv/scripts
 
+
+
+
 <img width="1062" height="403" alt="captura_github2" src="https://github.com/user-attachments/assets/a46535a4-924e-4de7-959c-ea8f20970977" />
 
+
+
+
+
 y luego, 
+
+
+
+
 
 <img width="921" height="395" alt="caputa_github3" src="https://github.com/user-attachments/assets/974e186a-a66d-43f3-be33-591ec200082b" />
 
