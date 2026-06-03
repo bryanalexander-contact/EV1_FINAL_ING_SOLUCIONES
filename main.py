@@ -10,27 +10,29 @@ from agentes.analista import analyze
 from agentes.redactor import compose_proposal
 
 
-def extract_entities_from_chat(user_input, client):
-    """Usa el LLM central para parsear la entrada libre del usuario.
-    Optimizado para extraer de forma limpia temas de conversación o de cultura general
-    aislando las palabras clave exactas para el buscador web.
+def extract_entities_from_chat(user_input, client, historial_contexto=""):
+    """Usa el LLM central para parsear la entrada libre del usuario teniendo en cuenta
+    el hilo de los últimos mensajes para resolver pronombres o detectar preguntas sobre el historial.
     """
     prompt = f"""
-    Eres un extractor de entidades de alta precisión. El usuario interactúa en un chat libre y puede pedir una propuesta comercial o hacer una pregunta general/técnica/cultural.
+    Eres un extractor de entidades de alta precisión. El usuario interactúa en un chat libre y puede pedir una propuesta comercial, hacer una pregunta general/técnica, o bien hacer una pregunta meta-conversacional sobre lo que ha ocurrido en este mismo chat.
     
-    Analiza el siguiente mensaje del usuario:
+    CONTEXTO RECIENTE DEL CHAT (Últimos mensajes de la conversación):
+    {historial_contexto}
+    
+    MENSAJE ACTUAL DEL USUARIO:
     "{user_input}"
     
+    Tu tarea es generar un objeto JSON analizando el mensaje actual. 
+    1. Si el usuario usa pronombres como 'eso', 'aquello' o hace una pregunta de seguimiento, utiliza el CONTEXTO RECIENTE para deducir a qué concepto o tecnología se refiere.
+    2. REGLA CRÍTICA DE HISTORIAL: Si el usuario te está preguntando directamente sobre lo que se ha dicho en la conversación (ej: '¿te pregunté sobre X?', '¿de qué hablábamos antes?', '¿qué fue lo primero que dije?', '¿estás mintiendo sobre lo que te pregunté?'), debes detectar que es una pregunta sobre el historial del chat.
+
     Genera un objeto JSON estrictamente con las siguientes llaves:
     - "cliente": El nombre de la empresa/cliente mencionado. Si no hay ninguno, pon "General".
-    - "servicio": El tema central, evento, tecnología o concepto por el que pregunta. 
-                 REGLA CRÍTICA: Extrae exclusivamente el nombre del concepto limpio (palabras clave puras) para poder buscarlo en Wikipedia. 
-                 Elimina comandos o muletillas como 'busca en wikipedia', 'quien es', 'que contiene', 'dime sobre', etc.
-                 Ejemplo: Si dice 'quien es el campeon actual de la champions league 2026', el servicio DEBE ser 'UEFA Champions League'.
-                 Ejemplo: Si dice 'que contiene una hamburguesa de mcdonalds', el servicio DEBE ser 'McDonald's'.
-                 Si es un saludo o pregunta muy vaga, usa 'Consultoría Tecnológica'.
+    - "servicio": El tema central, evento, tecnología o concepto por el que pregunta. Extrae exclusivamente el nombre del concepto limpio (palabras clave puras) para poder buscarlo en Wikipedia. Si es una pregunta sobre el historial o un saludo vago, usa 'Consultoría Tecnológica'.
     - "descuento": El porcentaje de descuento solicitado si se menciona (ej: '25%'). Si no se menciona, pon '0%'.
-    - "es_pregunta_general": true si el usuario solo está haciendo una pregunta informativa/duda técnica/tema de cultura general, false si explícitamente está solicitando una propuesta comercial, cotización o venta de negocio para Soluciones Ticket.
+    - "es_pregunta_general": true si el usuario solo está haciendo una pregunta informativa/duda técnica, false si solicita una propuesta comercial corporativa.
+    - "pregunta_sobre_el_historial": true si el usuario está preguntando explícitamente sobre el pasado del chat o lo que se ha hablado en la conversación. De lo contrario, false.
 
     Responde ÚNICAMENTE el JSON crudo, sin bloques de código ```json o texto adicional.
     """
@@ -51,12 +53,12 @@ def extract_entities_from_chat(user_input, client):
         
         return json.loads(raw_content)
     except Exception as e:
-        # Fallback seguro en caso de error de parseo
         return {
             "cliente": "General",
             "servicio": "Consultoría Tecnológica",
             "descuento": "0%",
-            "es_pregunta_general": True
+            "es_pregunta_general": True,
+            "pregunta_sobre_el_historial": False
         }
 
 
@@ -92,6 +94,9 @@ def main():
     print("Escribe 'salir' o 'exit' para terminar la conversación.")
     print("=" * 60 + "\n")
 
+    # ---- [GESTIÓN DE MEMORIA CONVERSACIONAL] ----
+    historial_memoria = []
+
     # ---- Bucle de Chat Interactivo ----
     while True:
         try:
@@ -109,24 +114,32 @@ def main():
 
         print("\n⏳ Pensando...")
 
-        # 1. Entender la entrada del usuario en lenguaje natural
-        request = extract_entities_from_chat(user_input, client)
-        
-        # 2. Agente Auditor (RAG Interno)
-        try:
-            audit_report = audit(request, combined_policy_text)
-        except Exception as e:
-            audit_report = f"Error en auditoría interna: {e}"
+        # Convertimos el historial acumulado en un bloque de texto
+        contexto_texto = "\n".join(historial_memoria) if historial_memoria else "No hay mensajes previos en este chat."
 
-        # 3. Herramienta externa (Wikipedia) - Ahora recibe un término limpio
+        # 1. Entender la entrada pasando la memoria contextual
+        request = extract_entities_from_chat(user_input, client, contexto_texto)
+        
+        # Detectamos si es una consulta sobre la conversación misma
+        sobre_historial = request.get("pregunta_sobre_el_historial", False)
+
+        # 2. Agente Auditor (RAG Interno) - Se ejecuta solo si NO es una pregunta de historial
+        if not sobre_historial:
+            try:
+                audit_report = audit(request, combined_policy_text)
+            except Exception as e:
+                audit_report = f"Error en auditoría interna: {e}"
+        else:
+            audit_report = "No requerido. El usuario está preguntando sobre el historial de la conversación actual."
+
+        # 3. Herramienta externa (Wikipedia) - Se salta si es pregunta de historial
         wiki_text = ""
         term_to_search = request.get("servicio", "").strip()
         
-        if term_to_search and term_to_search != "Consultoría Tecnológica":
+        if not sobre_historial and term_to_search and term_to_search != "Consultoría Tecnológica":
             print(f"🌐 [Herramienta Web] Buscando en Wikipedia: '{term_to_search}'...")
             try:
                 wiki_text = search_wikipedia(term_to_search)
-                # Si la API responde un mensaje de no encontrado vacío o genérico de LangChain:
                 if not wiki_text or "No good Wikipedia Search Result found" in wiki_text:
                     wiki_text = "No se encontró un artículo específico en internet para este término exacto."
             except Exception as e:
@@ -135,14 +148,21 @@ def main():
             wiki_text = "No se requirió búsqueda externa adicional."
 
         # 4. Agente Analista (Contexto del Mercado)
-        try:
-            market_insights = analyze(request["servicio"], wiki_text)
-        except Exception as e:
-            market_insights = f"No se pudieron generar insights de mercado externos: {e}"
+        if not sobre_historial:
+            try:
+                market_insights = analyze(request["servicio"], wiki_text)
+            except Exception as e:
+                market_insights = f"No se pudieron generar insights de mercado externos: {e}"
+        else:
+            market_insights = f"Contexto real del historial de este chat para responder al usuario:\n{contexto_texto}"
 
         # 5. Agente Redactor (Generación de la Respuesta Final)
         try:
             request["mensaje_original"] = user_input
+            # Si es pregunta de historial, alteramos temporalmente el reporte del auditor para guiar al Redactor
+            if sobre_historial:
+                audit_report = f"¡CRÍTICO! El usuario te está preguntando si dijo o no algo en este chat. Usa la sección de insights (que contiene el historial real) para responder con la verdad. No inventes."
+            
             proposal_md = compose_proposal(request, audit_report, market_insights)
         except Exception as e:
             print(f"❌ Error en el proceso de redacción: {e}")
@@ -153,6 +173,13 @@ def main():
         print("-" * 40)
         print(proposal_md)
         print("-" * 40 + "\n")
+
+        # ---- [ACTUALIZACIÓN DE LA MEMORIA] ----
+        historial_memoria.append(f"Usuario: {user_input}")
+        historial_memoria.append(f"IA: {proposal_md[:150]}...") 
+        
+        if len(historial_memoria) > 4:
+            historial_memoria = historial_memoria[-4:]
 
 
 if __name__ == "__main__":
