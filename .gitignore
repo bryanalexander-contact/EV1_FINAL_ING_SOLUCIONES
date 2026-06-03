@@ -3,8 +3,7 @@
 node_modules/
 
 # Bloquear todos los archivos de texto (Informes)
-*.txt
-output/*.txt
+
 
 # Archivos temporales de Python
 __pycache__/
