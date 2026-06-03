@@ -16,6 +16,8 @@ dependencies = [
     "asttokens==3.0.1",
     "async-lru==2.3.0",
     "attrs==26.1.0",
+    "azure-ai-inference>=1.0.0b9",
+    "azure-core>=1.41.0",
     "babel==2.18.0",
     "beautifulsoup4==4.14.3",
     "bleach==6.3.0",
@@ -138,5 +140,6 @@ dependencies = [
     "webcolors==25.10.0",
     "webencodings==0.5.1",
     "websocket-client==1.9.0",
+    "wikipedia>=1.4.0",
     "yarl==1.24.2",
 ]

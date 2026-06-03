@@ -1,90 +1,117 @@
-# Agente IT Consultor & Auditor Inteligente (RAG + Web Search)
 
-Este es un proyecto de Inteligencia Artificial que implementa un sistema multi-agente utilizando **LangChain**, una base de datos vectorial local con **FAISS**, y capacidades de búsqueda externa a través de **DuckDuckGo**. El sistema extrae conocimiento de documentos internos (PDFs en la carpeta `data/`) y los compara con información pública de Internet en tiempo real para generar informes comerciales, técnicos y de preventa de alta calidad.
+Este proyecto consiste en un sistema multi-agente inteligente diseñado para automatizar y optimizar el proceso comercial de **Soluciones Ticket**. El sistema interactúa con los usuarios en lenguaje natural a través de la terminal, procesando tanto solicitudes de propuestas comerciales formales como consultas técnicas e informativas de mercado de manera híbrida.
 
-La aplicación ha sido portada de Jupyter Notebook a una **consola interactiva y guiada por terminal** para facilitar su ejecución directa y su despliegue.
-
----
-
-## 📋 Requisitos del Sistema
-
-> [!IMPORTANT]
-> **Versión Estricta de Python**: Este proyecto requiere única y exclusivamente **Python 3.11.4** para su correcto funcionamiento y compatibilidad de dependencias. El programa validará esta versión al iniciar y detendrá la ejecución si se utiliza otra distinta.
-
-### Cómo instalar Python 3.11.4
-Si utilizas gestores de versiones como `pyenv` o `uv`:
-- **pyenv**: `pyenv install 3.11.4` y luego `pyenv local 3.11.4`
-- **uv**: `uv python install 3.11.4`
-
-O descárgalo directamente desde el [sitio oficial de Python](https://www.python.org/downloads/release/python-3114/).
+El software integra una base de conocimientos privada mediante **RAG (Retrieval-Augmented Generation)** y consultas en tiempo real a fuentes externas (Wikipedia), manteniendo un hilo conversacional fluido gracias a una gestión de memoria a corto plazo.
 
 ---
 
-## 🚀 Instalación y Configuración
+## Arquitectura del Sistema (Multi-Agente)
 
-Sigue estos pasos para clonar el repositorio, instalar las dependencias y ejecutar el proyecto:
+El proyecto está diseñado bajo una arquitectura modular de agentes especializados:
 
-### 1. Clonar el repositorio
-```bash
-git clone https://github.com/tu-usuario/nombre-del-repositorio.git
-cd nombre-del-repositorio
-```
+1. **Agente Extractor (`main.py`):** Clasifica la intención del usuario y extrae entidades en un formato JSON estructurado. Resuelve pronombres apoyándose en el historial.
+2. **Agente Auditor (`agentes/auditor.py`):** Realiza búsquedas semánticas (RAG) sobre los documentos internos de la empresa para validar la disponibilidad de servicios y la viabilidad de descuentos.
+3. **Agente Analista (`agentes/analista.py`):** Procesa el contexto externo recolectado de la web para añadir valor y madurez técnica a las respuestas.
+4. **Agente Redactor (`agentes/redactor.py`):** Orquesta las entradas de todos los agentes. Si es una venta, genera una propuesta formal estructurada en **AIDA** (Atención, Interés, Deseo, Acción); si es una duda, genera una respuesta directa e hilada conversacionalmente.
 
-### 2. Crear y activar un entorno virtual (Recomendado)
-```bash
-# Crear entorno virtual con Python 3.11.4
+---
+
+## Estructura del Proyecto
+
+```text
+proyecto_final/
+├── .venv/                  # Entorno virtual de Python
+├── agentes/                # Lógica de los agentes especializados
+│   ├── analista.py
+│   ├── auditor.py
+│   └── redactor.py
+├── config/                 # Configuración central del cliente de IA
+│   └── settings.py
+├── data/                   # Base de conocimiento privada (RAG)
+│   ├── capacidades_tecnicas.pdf
+│   ├── catalogo_servicios.pdf
+│   └── politicas_comerciales.pdf
+├── herramientas/           # Módulos de conexión web y lectura de datos
+│   ├── buscador_web.py
+│   └── lector_pdf.py
+├── .env                    # Variables de entorno (Credenciales y API Keys)
+├── .gitignore              # Archivos excluidos de Git
+├── .python-version         # Especificación de la versión exacta de Python
+├── main.py                 # Orquestador principal y bucle de chat
+├── pyproject.toml          # Configuración de dependencias (Formato moderno)
+├── requirements.txt        # Dependencias congeladas para instalación clásica
+└── uv.lock                 # Archivo de bloqueo para entornos unificados con UV
+
+
+Requisitos e Instalación
+Este proyecto está preparado para un despliegue rápido e idéntico en cualquier máquina mediante soporte híbrido (Pip tradicional o UV).
+
+Paso 1: Clonar el repositorio y posicionarse en la carpeta
+Bash
+
+
+git clone <URL_DE_TU_REPOSITORIO>
+cd proyecto_final
+Paso 2: Crear y activar el entorno virtual (Recomendado)
+En Windows:
+
+Bash
+
+
 python -m venv .venv
+.venv\Scripts\activate
+En Mac/Linux:
 
-# Activar el entorno virtual:
-# En Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-# En Windows (CMD):
-.venv\Scripts\activate.bat
-# En macOS/Linux:
+Bash
+
+
+python -m venv .venv
 source .venv/bin/activate
-```
+Paso 3: Instalar las dependencias
+Puedes instalar el entorno idéntico de desarrollo usando cualquiera de las siguientes opciones:
 
-### 3. Instalar las dependencias
-Instala todas las librerías necesarias directamente desde el archivo `requirements.txt`:
-```bash
+Opción A (Instalación clásica con Pip):
+
+Bash
+
+
 pip install -r requirements.txt
-```
+Opción B (Instalación ultra-rápida si usas UV):
 
-### 4. Configurar el Token de GitHub Models (`GITHUB_TOKEN`)
-Este proyecto utiliza el endpoint de inferencia de modelos de GitHub (`https://models.inference.ai.azure.com`) con el modelo **gpt-4o-mini** y embeddings **text-embedding-3-small**.
+Bash
 
-1. Genera un token de acceso personal (classic o fine-grained) en la configuración de desarrollador de GitHub. Debe tener acceso a GitHub Models.
-2. Puedes crear un archivo `.env` en la raíz del proyecto con la siguiente línea:
-   ```env
-   GITHUB_TOKEN=tu_github_token_aqui
-   ```
-3. *Nota*: Si no creas el archivo `.env`, **el programa te solicitará de forma amigable tu token de forma interactiva en la primera ejecución** y lo guardará de forma automática en un archivo `.env` para ti.
 
----
+uv sync
+Paso 4: Configurar Variables de Entorno
+Crea un archivo llamado .env en la raíz del proyecto y añade tus credenciales correspondientes de OpenAI o Azure:
 
-## 🖥️ Uso de la Aplicación de Terminal
+Fragmento de código
 
-Para iniciar la interfaz interactiva guiada por consola, simplemente ejecuta:
 
-```bash
+OPENAI_API_KEY=tu_api_key_aqui
+🎮 Ejecución y Pruebas
+Para iniciar el asistente interactivo, simplemente ejecuta el archivo principal:
+
+Bash
+
+
 python main.py
-```
+Flujos de Prueba Sugeridos (Demostración de Capacidades)
+Prueba de Memoria Flotante e Híbrido RAG/Web:
 
-### Opciones Disponibles en el Menú:
-1. **Generar Informe Comparativo de Servicios (Preventa IT)**: Analiza el catálogo de servicios internos en la nube/ciberseguridad y busca precios actualizados de competidores en la web para estructurar un informe comparativo en `output/informe_final.txt`.
-2. **Generar Informe de Auditoría Comercial (Políticas y Garantías)**: Extrae las políticas comerciales, plazos de garantía y esquemas de pago del PDF interno para contrastarlos con políticas del mercado. Lo guarda en `output/informe_politicas_comerciales.txt`.
-3. **Generar Informe de Benchmark Técnico (Capacidades e ISO 27001)**: Realiza un estudio comparativo técnico y de cumplimiento de estándares de seguridad física y lógica frente a los grandes hiperescaladores (AWS, Azure, GCP). Lo guarda en `output/informe_capacidades_tecnicas.txt`.
-4. **Chat Interactivo con el Agente (Consulta Libre)**: Entra en un modo conversacional abierto donde puedes consultarle al agente lo que desees. El agente decidirá dinámicamente si usar el buscador RAG de tus PDFs o DuckDuckGo Search para responder.
-5. **Verificar Archivos de Salida**: Te permite inspeccionar los informes creados actualmente y ver sus contenidos directamente en la terminal sin salir del programa.
-6. **Salir**.
+Pregunta: ¿Qué es Kubernetes? (El sistema responderá usando Wikipedia y aclarará que no está en el catálogo).
 
----
+Pregunta: ¿Y Migración Cloud? (El sistema detectará el hilo conversacional, buscará en Wikipedia y además inyectará las políticas del RAG interno exigiendo el 50% de pago inicial).
 
-## 📂 Estructura del Proyecto
+Pregunta: ¿Me confirmas si te pregunté por Kubernetes al inicio? (Activará la bandera de historial, saltará Wikipedia y validará la memoria RAM del chat).
 
-- `main.py`: Código principal y punto de entrada que inicializa el sistema, los modelos de Azure AI Inference (GitHub Models), el motor RAG local con FAISS, y ejecuta la interfaz interactiva.
-- `data/`: Carpeta que almacena los documentos PDF del catálogo de la empresa.
-- `output/`: Carpeta autogenerada donde se guardan los informes producidos por los agentes.
-- `requirements.txt`: Archivo de dependencias para la instalación rápida.
-- `pyproject.toml` y `uv.lock`: Archivos de configuración de dependencias del entorno de desarrollo.
-- `.python-version`: Especificación estricta de la versión `3.11.4` de Python.
+Prueba de Auditoría de Riesgo Comercial (Estructura AIDA):
+
+Pregunta: Hola, cotízame Soporte Preventivo para mi empresa Alfa S.A. y aplícame un 40% de descuento. (El sistema detectará que es una propuesta comercial formal, el Agente Auditor rechazará el 40% basándose en el PDF de políticas y reformulará la oferta aplicando el tope máximo permitido).
+
+⚙️ Especificaciones Técnicas
+Control de Contexto: Implementa una ventana deslizante (Sliding Window Memory) en la RAM limitada estrictamente a las últimas interacciones para optimizar costos y evitar el desbordamiento de tokens.
+
+Modelo Base: Configurado centralmente desde config/settings.py.
+
+Procesamiento PDF: Extracción de texto plano y mapeo de conocimiento estático local sin persistencia pesada.
