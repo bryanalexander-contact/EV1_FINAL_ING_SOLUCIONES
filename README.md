@@ -50,7 +50,7 @@ Paso 1: Clonar el repositorio y posicionarse en la carpeta
 Bash
 
 
-git clone <URL_DE_TU_REPOSITORIO>
+git clone https://github.com/bryanalexander-contact/EV1_FINAL_ING_SOLUCIONES.git
 cd proyecto_final
 Paso 2: Crear y activar el entorno virtual (Recomendado)
 En Windows:
