@@ -52,50 +52,54 @@ Bash
 
 git clone https://github.com/bryanalexander-contact/EV1_FINAL_ING_SOLUCIONES.git
 cd proyecto_final
+
+
+
 Paso 2: Crear y activar el entorno virtual (Recomendado)
 En Windows:
-
-Bash
 
 
 python -m venv .venv
 .venv\Scripts\activate
+
+
 En Mac/Linux:
-
-Bash
-
 
 python -m venv .venv
 source .venv/bin/activate
+
+
 Paso 3: Instalar las dependencias
 Puedes instalar el entorno idéntico de desarrollo usando cualquiera de las siguientes opciones:
 
 Opción A (Instalación clásica con Pip):
 
-Bash
-
 
 pip install -r requirements.txt
 Opción B (Instalación ultra-rápida si usas UV):
 
-Bash
 
+SI NO FUNCIONARA PIP:
+CORRER:
 
 uv sync
+
+
 Paso 4: Configurar Variables de Entorno
-Crea un archivo llamado .env en la raíz del proyecto y añade tus credenciales correspondientes de OpenAI o Azure:
-
-Fragmento de código
+Crea un archivo llamado .env en la raíz del proyecto y añade tus credenciales correspondientes de OpenAI o Azure Y TOKEN DE GITHUB MODELS classic hecho con permisos de repo, read user y user:email
 
 
-OPENAI_API_KEY=tu_api_key_aqui
-🎮 Ejecución y Pruebas
-Para iniciar el asistente interactivo, simplemente ejecuta el archivo principal:
-
-Bash
-
+PASO 5 FINAL PARA EJECUTAR AGENTES:
 
 python main.py
+
+
+
+
+
+
+
+
 Flujos de Prueba Sugeridos (Demostración de Capacidades)
 Prueba de Memoria Flotante e Híbrido RAG/Web:
 
@@ -109,7 +113,7 @@ Prueba de Auditoría de Riesgo Comercial (Estructura AIDA):
 
 Pregunta: Hola, cotízame Soporte Preventivo para mi empresa Alfa S.A. y aplícame un 40% de descuento. (El sistema detectará que es una propuesta comercial formal, el Agente Auditor rechazará el 40% basándose en el PDF de políticas y reformulará la oferta aplicando el tope máximo permitido).
 
-⚙️ Especificaciones Técnicas
+Especificaciones Técnicas
 Control de Contexto: Implementa una ventana deslizante (Sliding Window Memory) en la RAM limitada estrictamente a las últimas interacciones para optimizar costos y evitar el desbordamiento de tokens.
 
 Modelo Base: Configurado centralmente desde config/settings.py.
